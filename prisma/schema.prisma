@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW")
+}
+
+model Rescue {
+  id         Int                 @id @default(autoincrement())
+  name      String
+  rescuers RescuesOnRescuers[]
+}
+
+model Rescuer {
+  id    Int                 @id @default(autoincrement())
+  name  String
+  rescues RescuesOnRescuers[]
+}
+
+model RescuesOnRescuers {
+  rescue       Rescue     @relation(fields: [rescueId], references: [id])
+  rescuer      Rescuer @relation(fields: [rescuerId], references: [id])
+  rescueId    Int // relation scalar field (used in the `@relation` attribute above)
+  rescuerId  Int // relation scalar field (used in the `@relation` attribute above)
+  assignedAt DateTime @default(now())
+  assignedBy String
+
+  @@id([rescueId, rescuerId])
+}
