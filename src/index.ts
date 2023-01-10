@@ -7,7 +7,6 @@
  *
  * Learn more at https://developers.cloudflare.com/workers/
  */
-
 export interface Env {
   // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
   // MY_KV_NAMESPACE: KVNamespace;
@@ -17,32 +16,47 @@ export interface Env {
   //
   // Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
   // MY_BUCKET: R2Bucket;
+	DATABASE_URL: string;
 }
 
-// export default {
-// 	async fetch(
-// 		request: Request,
-// 		env: Env,
-// 		ctx: ExecutionContext
-// 	): Promise<Response> {
-// 		return new Response("Hello World!");
-// 	},
+import { PrismaClient } from "@prisma/client/edge";
+import { createYoga, createSchema } from "graphql-yoga";
+import { schema } from "./schema";
+import { resolvers } from "./resolvers";
+
+// type GraphQLContext = {
+// 	prisma: PrismaClient
 // };
 
-import { createYoga, createSchema } from "graphql-yoga";
+const createContext = (connectionString: string) => {
+	return {
+		prisma: new PrismaClient({
+			datasources: {
+				db: {
+					url: connectionString,
+				},
+			},
+		}),
+	};
+}
 
-const yoga = createYoga({
-  schema: createSchema({
-    typeDefs: /* GraphQL */ `
-      type Query {
-        rescue: String!
-      }
-    `,
-    resolvers: {
-      Query: {
-        rescue: () => "Rescue me!",
-      },
-    },
-  }),
-});
-export default { fetch: yoga.fetch };
+export default {
+	async fetch(
+		request: Request,
+		env: Env,
+		ctx: ExecutionContext
+	): Promise<Response> {
+		const context = createContext(env.DATABASE_URL);
+		const yoga = createYoga({
+			graphiql: true,
+			landingPage: true,
+			schema: createSchema({
+				typeDefs: schema,
+				resolvers
+			}),
+			context: () => context
+		});
+
+		return yoga.fetch(request, env, ctx);
+	},
+};

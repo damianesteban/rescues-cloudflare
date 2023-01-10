@@ -2,3 +2,6 @@ name = "graphql-api"
 main = "src/index.ts"
 compatibility_date = "2023-01-10"
 
+
+[vars]
+DATABASE_URL = "prisma://aws-us-east-1.prisma-data.com/?api_key="
